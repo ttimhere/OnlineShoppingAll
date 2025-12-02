@@ -67,12 +67,12 @@ public class SecurityConfig {
                         "/api/user/register",
                         "/api/test"
                 ).permitAll()
-                // ✅ 购物车接口必须登录后访问
+                // 购物车接口必须登录后访问
                 .antMatchers("/api/cart/**").authenticated()
                 // 其他接口需要认证
                 .anyRequest().authenticated();
 
-        // ✅ 添加 JWT 过滤器
+        // 添加 JWT 过滤器
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
