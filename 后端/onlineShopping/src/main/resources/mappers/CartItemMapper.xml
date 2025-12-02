@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.online_shopping_project.onlineshopping.mapper.CartItemMapper">
+    <!-- 定义结果映射 resultMap，将数据库表 cart_item 的列映射到实体类 CartItem 的属性。-->
+    <resultMap id="CartItemMap" type="com.online_shopping_project.onlineshopping.entity.CartItem">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="quantity" column="quantity"/>
+        <result property="selected" column="selected"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+    <!-- 根据用户ID和商品ID查询购物车条目，返回 CartItem 实体。-->
+    <select id="selectByUserAndProduct" resultMap="CartItemMap">
+        SELECT * FROM cart_item
+        WHERE user_id = #{userId} AND product_id = #{productId}
+            LIMIT 1
+    </select>
+    <!-- 插入新的购物车条目-->
+    <insert id="insert" parameterType="com.online_shopping_project.onlineshopping.entity.CartItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cart_item(user_id, product_id, quantity, selected, create_time)
+        VALUES(#{userId}, #{productId}, #{quantity}, #{selected}, NOW())
+    </insert>
+    <!--更新购物车中商品数量-->
+    <update id="updateQuantity">
+        UPDATE cart_item SET quantity = #{quantity}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+    <!-- 更新购物车中商品的选中状态（selected），同时刷新更新时间-->
+    <update id="updateSelected">
+        UPDATE cart_item SET selected = #{selected}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+    <!-- 删除指定用户下指定商品的购物车记录-->
+    <delete id="deleteByUserAndProduct">
+        DELETE FROM cart_item WHERE user_id = #{userId} AND product_id = #{productId}
+    </delete>
+    <!-- 查询用户的购物车详情，联表 product，返回 CartItemVO-->
+    <select id="selectCartDetail" resultType="com.online_shopping_project.onlineshopping.entity.CartItemVO">
+        SELECT
+            ci.id        AS cartItemId,
+            p.id         AS productId,
+            p.title      AS title,
+            p.sub_title  AS subTitle,
+            COALESCE(p.main_img, '') AS img,
+            p.price      AS price,
+            p.stock      AS stock,
+            ci.quantity  AS quantity,
+            ci.selected  AS selected,
+            (p.price * ci.quantity) AS subtotal
+        FROM cart_item ci
+                 JOIN product p ON p.id = ci.product_id
+        WHERE ci.user_id = #{userId}
+        ORDER BY ci.create_time DESC
+    </select>
+    <!-- 结算后清空被选中的条目 -->
+    <delete id="deleteSelectedByUser">
+        DELETE FROM cart_item WHERE user_id = #{userId} AND selected = 1
+    </delete>
+</mapper>
